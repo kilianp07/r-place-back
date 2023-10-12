@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tableau de Pixels</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="1000" height="700"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const serverURL = 'ws://app:8080/websocket'; 
+
+        const socket = new WebSocket(serverURL);
+
+        socket.onopen = (event) => {
+            console.log('Connecté au serveur WebSocket');
+
+            // Au démarrage, récupérer les données initiales du serveur
+            fetch('http://app:8080/color-placements') // Effectue une requête GET vers /color-placements
+                .then(response => response.json())
+                .then(data => {
+                    // Traitez les données initiales ici
+                    data.forEach(placement => {
+                        const { X, Y, Color } = placement;
+                        ctx.fillStyle = Color;
+                        ctx.fillRect(X, Y, 1, 1);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération des données initiales:', error);
+                });
+        };
+
+        socket.onmessage = (event) => {
+            const placement = JSON.parse(event.data);
+            const { X, Y, Color } = placement;
+            ctx.fillStyle = Color;
+            ctx.fillRect(X, Y, 1, 1);
+        };
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const X = Math.floor(event.clientX - rect.left);
+            const Y = Math.floor(event.clientY - rect.top);
+            const Color = 'red'; // Changez la couleur selon vos besoins
+
+            const placement = { X, Y, Color };
+            socket.send(JSON.stringify(placement));
+        });
+    </script>
+</body>
+</html>
