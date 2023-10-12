@@ -1,0 +1,42 @@
+version: "3.3"
+services:
+  db:
+    image: mysql
+    restart: always
+    healthcheck:
+      test: exit 0
+    environment:
+      MYSQL_DATABASE: "place"
+      MYSQL_USER: "place"
+      MYSQL_PASSWORD: "place"
+      MYSQL_ROOT_PASSWORD: "place"
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    volumes:
+      - my-db:/var/lib/mysql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+
+
+  apache:
+    image: httpd:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    container_name: apache
+    ports:
+      - "80:80"
+    volumes:
+      - ./front:/usr/local/apache2/htdocs
+volumes:
+  my-db:
